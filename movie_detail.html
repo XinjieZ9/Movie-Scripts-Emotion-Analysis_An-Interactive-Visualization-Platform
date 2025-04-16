@@ -289,18 +289,18 @@
     function mapVideoEmotions(videoData) {
       // 计算总分
       const totalScore = 
-        (videoData["Fearful / Scared / Afraid"] + videoData["Anxious / Tense / Nervous"]) / 2 +
+        (videoData["Fearful / Scared / Afraid"] +
         videoData["Sad / Downhearted / Blue"] +
         videoData["Surprised / Amazed / Astonished"] +
-        (videoData["Angry / Irritated / Mad"] + videoData["Disdainful / Scornful / Contemptuous"]) / 2 +
-        (videoData["Joyful / Amused / Happy"] + videoData["Warm-hearted / Gleeful / Elated"]) / 2 +
+        (videoData["Angry / Irritated / Mad"] +
+        (videoData["Joyful / Amused / Happy"] +
         videoData["Loving / Affectionate / Friendly"];
       
       // 计算每个情感的百分比
       return [
         { 
           emotion: "Fear", 
-          value: ((videoData["Fearful / Scared / Afraid"] + videoData["Anxious / Tense / Nervous"]) / 2) / totalScore * 100
+          value: videoData["Fearful / Scared / Afraid"] / totalScore * 100
         },
         { 
           emotion: "Sad", 
@@ -312,11 +312,11 @@
         },
         { 
           emotion: "Angry", 
-          value: ((videoData["Angry / Irritated / Mad"] + videoData["Disdainful / Scornful / Contemptuous"]) / 2) / totalScore * 100
+          value: videoData["Angry / Irritated / Mad"] / totalScore * 100
         },
         { 
           emotion: "Happy", 
-          value: ((videoData["Joyful / Amused / Happy"] + videoData["Warm-hearted / Gleeful / Elated"]) / 2) / totalScore * 100
+          value: videoData["Joyful / Amused / Happy"] / totalScore * 100
         },
         { 
           emotion: "Love", 
