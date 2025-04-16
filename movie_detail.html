@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Movie Details</title>
+  <script type="text/javascript" src="/CSE6242/lib/d3.v5.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 20px;
+      line-height: 1.6;
+      background-color: #f2f2f2;
+    }
+    .movie-header {
+      display: flex;
+      gap: 20px;
+      margin-bottom: 20px;
+      background-color: #fff;
+      padding: 15px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .movie-poster {
+      max-width: 300px;
+      height: auto;
+    }
+    .movie-info {
+      flex-grow: 1;
+    }
+    /* Fancy emotion selection area (in English) */
+    #emotionSelection {
+      border: 2px solid #aaa;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+      background: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%);
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      text-align: center;
+    }
+    #emotionSelection h2 {
+      margin-bottom: 15px;
+      font-size: 20px;
+      color: #333;
+    }
+    #emotionSelection label {
+      margin-right: 15px;
+      font-size: 16px;
+      color: #555;
+    }
+    #emotionSelection input[type="checkbox"] {
+      margin-right: 5px;
+    }
+    #emotionSelection button {
+      margin-top: 15px;
+      padding: 10px 20px;
+      font-size: 16px;
+      color: #fff;
+      background-color: #4c78a8;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    #emotionSelection button:hover {
+      background-color: #3b5f85;
+    }
+    /* 图表区域 */
+    #chartsSection {
+      display: none;
+      background-color: #fff;
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .chart-container {
+      display: flex;
+      justify-content: space-around;
+      margin-top: 20px;
+    }
+    .chart {
+      width: 300px;
+      height: 300px;
+    }
+    .reviews-section {
+      margin-top: 20px;
+      background-color: #fff;
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .review-item {
+      border-bottom: 1px solid #ddd;
+      padding: 10px 0;
+      position: relative;
+    }
+    .script-section, .reviews-section {
+      position: relative;
+    }
+    #scriptContainer, .review-content {
+      max-height: 4.8em; /* Approximately 3 lines */
+      overflow: hidden;
+      transition: max-height 0.3s ease;
+    }
+    #scriptContainer.expanded, .review-content.expanded {
+      max-height: none;
+    }
+    .expand-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: darkgray;
+      text-decoration: underline;
+      margin-left: 10px;
+    }
+    .expand-btn::before {
+      content: '▼ ';
+    }
+    .expand-btn.expanded::before {
+      content: '▲ ';
+    }
+  </style>
+</head>
+<body>
+  <div id="movieDetailContainer">
+    <div class="movie-header">
+      <img id="moviePoster" class="movie-poster" src="" alt="Movie Poster">
+      <div class="movie-info">
+        <h1 id="movieTitle"></h1>
+        <p><strong>Overview:</strong> <span id="movieOverview"></span></p>
+        <p><strong>Popularity:</strong> <span id="moviePopularity"></span></p>
+        <p><strong>Rating:</strong> <span id="movieRating"></span></p>
+        <p><strong>Vote Count:</strong> <span id="voteCount"></span></p>
+      </div>
+    </div>
+
+    <!-- Emotion selection area (English & fancy style) -->
+    <div id="emotionSelection">
+      <h2>What type of movie do you think this is? (Select all that apply)</h2>
+      <label><input type="checkbox" name="emotion" value="Fear"> Fear</label>
+      <label><input type="checkbox" name="emotion" value="Sad"> Sad</label>
+      <label><input type="checkbox" name="emotion" value="Surprise"> Surprise</label>
+      <label><input type="checkbox" name="emotion" value="Angry"> Angry</label>
+      <label><input type="checkbox" name="emotion" value="Happy"> Happy</label>
+      <label><input type="checkbox" name="emotion" value="Love"> Love</label>
+      <br>
+      <button id="emotionSubmit">Submit</button>
+    </div>
+
+    <!-- Charts section: initially hidden -->
+    <div id="chartsSection">
+      <div class="chart-container">
+        <div>
+          <h2>Subtitle Emotion Analysis</h2>
+          <div id="scriptEmotionChart" class="chart"></div>
+        </div>
+        <div>
+          <h2>Review Emotion Analysis</h2>
+          <div id="reviewEmotionChart" class="chart"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="script-section">
+      <h2>Script</h2>
+      <div id="scriptContainer"></div>
+      <span id="scriptExpandBtn" class="expand-btn">Show more</span>
+    </div>
+
+    <div class="reviews-section">
+      <h2>Reviews</h2>
+      <div id="reviewsContainer"></div>
+    </div>
+  </div>
+
+  <script>
+    // Pie chart drawing function: place labels toward the outer area inside the sectors
+    function createPieChart(containerId, data) {
+      const width = 450;
+      const height = 300;
+      const margin = { top: 20, right: 120, bottom: 20, left: 20 };
+
+      const radius = Math.min(
+        width - margin.left - margin.right,
+        height - margin.top - margin.bottom
+      ) / 2;
+
+      d3.select(`#${containerId}`).selectAll("*").remove();
+
+      const svg = d3.select(`#${containerId}`)
+        .append("svg")
+        .attr("width", width)
+        .attr("height", height)
+        .append("g")
+        .attr("transform", `translate(${margin.left + radius}, ${margin.top + radius})`);
+
+      const colorPalette = [
+        "#4c78a8",
+        "#f58518",
+        "#e45756",
+        "#72b7b2",
+        "#54a24b",
+        "#eeca3b"
+      ];
+      const color = d3.scaleOrdinal(colorPalette);
+
+      const pie = d3.pie()
+        .sort(null)
+        .value(d => d.value);
+
+      const arc = d3.arc()
+        .innerRadius(0)
+        .outerRadius(radius);
+
+      // Label arc: labels are placed on a circle at 75% of the radius
+      const labelArc = d3.arc()
+        .innerRadius(radius * 0.75)
+        .outerRadius(radius * 0.75);
+
+      const arcs = svg.selectAll(".arc")
+        .data(pie(data))
+        .enter()
+        .append("g")
+        .attr("class", "arc");
+
+      arcs.append("path")
+        .attr("d", arc)
+        .attr("fill", (d, i) => color(i))
+        .style("stroke", "#fff")
+        .style("stroke-width", "2px");
+
+      arcs.append("text")
+        .attr("transform", d => `translate(${labelArc.centroid(d)})`)
+        .attr("text-anchor", "middle")
+        .style("font-size", "12px")
+        .style("fill", "#000")
+        .text(d => `${d.data.value.toFixed(1)}%`);
+
+      const legend = svg.selectAll(".legend")
+        .data(pie(data))
+        .enter()
+        .append("g")
+        .attr("class", "legend")
+        .attr("transform", (d, i) => {
+          const legendX = radius + 20;
+          const legendY = i * 20 - radius;
+          return `translate(${legendX}, ${legendY})`;
+        });
+
+      legend.append("rect")
+        .attr("width", 14)
+        .attr("height", 14)
+        .attr("fill", (d, i) => color(i))
+        .attr("y", -8);
+
+      legend.append("text")
+        .attr("x", 25)
+        .attr("dy", ".35em")
+        .style("font-size", "14px")
+        .style("fill", "#000")
+        .text(d => d.data.emotion);
+    }
+
+    // CSV title formatting function
+    function formatTitleForCSV(title, suffix) {
+      return title
+        .trim()
+        .replace(/:\s*/g, "__")
+        .replace(/&\s*/g, "__")
+        .replace(/'\s*/g, "_")
+        .replace(/\s+/g, "_")
+        + suffix;
+    }
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const movieId = urlParams.get('id');
+
+    Promise.all([
+      d3.json("/CSE6242/movie_data/clean_top5_movie_data_with_subtitle.json"),
+      d3.csv("/CSE6242/movie_data/All_Movies_Subtitle_Emotion_Scores.csv"),
+      d3.csv("/CSE6242/movie_data/all_movies_reviews_emotion_scores.csv")
+    ])
+    .then(([movieData, subtitleData, reviewsData]) => {
+      const movie = movieData.find(m => m.movie_id === parseInt(movieId));
+      if (!movie) return;
+
+      // Fill movie basic information
+      document.getElementById('moviePoster').src = `https://image.tmdb.org/t/p/w500${movie.poster_path}`;
+      document.getElementById('movieTitle').textContent = movie.movie_title;
+      document.getElementById('movieOverview').textContent = movie.overview;
+      document.getElementById('moviePopularity').textContent = movie.popularity;
+      document.getElementById('movieRating').textContent = movie.movie_rate.toFixed(2);
+      document.getElementById('voteCount').textContent = movie.vote_count;
+
+      const scriptContainer = document.getElementById('scriptContainer');
+      scriptContainer.textContent = movie.subtitle_text || "";
+      const scriptExpandBtn = document.getElementById('scriptExpandBtn');
+      scriptExpandBtn.addEventListener('click', () => {
+        scriptContainer.classList.toggle('expanded');
+        scriptExpandBtn.classList.toggle('expanded');
+        scriptExpandBtn.textContent = scriptContainer.classList.contains('expanded') 
+          ? 'Show less' 
+          : 'Show more';
+      });
+
+      // Generate CSV matching keys
+      const key1 = formatTitleForCSV(movie.movie_title, "_subtitle");
+      const key2 = formatTitleForCSV(movie.movie_title, "_reviews");
+
+      // Construct emotion data arrays (complete 6 dimensions)
+      let scriptEmotions = null;
+      const subtitleRow = subtitleData.find(d => d.movie_title === key1);
+      if (subtitleRow) {
+        scriptEmotions = [
+          { emotion: "Fear",      value: +subtitleRow.fear      * 100 },
+          { emotion: "Sad",       value: +subtitleRow.sadness   * 100 },
+          { emotion: "Surprise",  value: +subtitleRow.surprise  * 100 },
+          { emotion: "Angry",     value: +subtitleRow.anger     * 100 },
+          { emotion: "Happy",     value: +subtitleRow.joy       * 100 },
+          { emotion: "Love",      value: +subtitleRow.love      * 100 }
+        ];
+      }
+
+      let reviewEmotions = null;
+      const reviewRow = reviewsData.find(d => d.movie_title === key2);
+      if (reviewRow) {
+        reviewEmotions = [
+          { emotion: "Fear",      value: +reviewRow.fear      * 100 },
+          { emotion: "Sad",       value: +reviewRow.sadness   * 100 },
+          { emotion: "Surprise",  value: +reviewRow.surprise  * 100 },
+          { emotion: "Angry",     value: +reviewRow.anger     * 100 },
+          { emotion: "Happy",     value: +reviewRow.joy       * 100 },
+          { emotion: "Love",      value: +reviewRow.love      * 100 }
+        ];
+      }
+
+      // Initially hide charts section; wait for user selection
+      document.getElementById('chartsSection').style.display = 'none';
+
+      // Emotion selection interaction: regardless of checkboxes, display full 6-dimension charts on submit
+      const emotionSubmitBtn = document.getElementById('emotionSubmit');
+      emotionSubmitBtn.addEventListener('click', () => {
+        // Show charts section
+        document.getElementById('chartsSection').style.display = 'block';
+        // Draw pie charts
+        if (scriptEmotions) {
+          createPieChart('scriptEmotionChart', scriptEmotions);
+        }
+        if (reviewEmotions) {
+          createPieChart('reviewEmotionChart', reviewEmotions);
+        }
+        // Hide emotion selection area
+        document.getElementById('emotionSelection').style.display = 'none';
+      });
+
+      // Process reviews section
+      const movieReviews = movie.review_list;
+      if (movieReviews && movieReviews.length > 0) {
+        const reviewsContainer = document.getElementById('reviewsContainer');
+        movieReviews.forEach((review, index) => {
+          const reviewElement = document.createElement('div');
+          reviewElement.classList.add('review-item');
+          reviewElement.innerHTML = `
+            <div class="review-content">${review}</div>
+            <span class="expand-btn" data-review-index="${index}">Show more</span>
+          `;
+          reviewsContainer.appendChild(reviewElement);
+        });
+        
+        reviewsContainer.addEventListener('click', (e) => {
+          if (e.target.classList.contains('expand-btn')) {
+            const reviewContent = e.target.previousElementSibling;
+            reviewContent.classList.toggle('expanded');
+            e.target.classList.toggle('expanded');
+            e.target.textContent = reviewContent.classList.contains('expanded') 
+              ? 'Show less' 
+              : 'Show more';
+          }
+        });
+      }
+    })
+    .catch(error => {
+      console.error("Error loading movie details:", error);
+    });
+  </script>
+</body>
+</html>
+
+
+
+
+
+
+

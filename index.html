@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Movie Emotion Analysis</title>
+  <!-- Google Font -->
+  <link href="https://fonts.googleapis.com/css?family=Poppins:300,400,600&display=swap" rel="stylesheet">
+  <!-- D3 & other libraries -->
+  <script type="text/javascript" src="/CSE6242/lib/d3.v5.min.js"></script>
+  <script type="text/javascript" src="/CSE6242/lib/d3-geo-projection.v2.min.js"></script>
+  <script type="text/javascript" src="/CSE6242/lib/d3-tip.min.js"></script>
+  <script type="text/javascript" src="/CSE6242/lib/topojson.v2.min.js"></script>
+  <script type="text/javascript" src="/CSE6242/lib/d3-legend.min.js"></script>
+
+  <style>
+    /* Global styling */
+    body {
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(to bottom right, #f5f7fa, #c3cfe2);
+      font-family: 'Poppins', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      color: #333;
+    }
+    h1 {
+      text-align: center;
+      margin: 20px;
+      font-size: 2.5em;
+      color: #444;
+      text-shadow: 1px 1px 3px rgba(0,0,0,0.2);
+    }
+    /* 保证这段介绍文字始终在同一行 */
+    p#datasetInfo {
+      max-width: 1000px;
+      white-space: nowrap;
+      overflow: auto;
+      font-size: 1.2em;
+      text-align: center;
+      margin: 0 20px;
+    }
+
+    /* Map container styling */
+    svg#choropleth {
+      border: 2px solid rgba(0,0,0,0.1);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      background-color: #fff;
+      margin: 20px;
+      border-radius: 8px;
+    }
+
+    .tip_class {
+      background-color: rgba(0,0,0,0.7);
+      color: #fff;
+      padding: 5px 10px;
+      border-radius: 4px;
+      font-size: 14px;
+      pointer-events: none;
+    }
+
+    /* Region movies section */
+    #regionMoviesSection {
+      max-width: 900px;
+      margin: 20px auto;
+      padding: 20px;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      display: none;
+    }
+    #regionTitle {
+      margin-top: 0;
+      font-size: 1.8em;
+      color: #333;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #f0f0f0;
+    }
+
+    /* Fancy table styling */
+    table {
+      width: 100%;
+      border-collapse: separate;  /* 分离边框模型，配合 border-spacing 生效 */
+      border-spacing: 0;         /* 可以结合需要进行调整，如5px */
+      font-size: 16px;
+      margin-top: 20px;
+      border-radius: 8px;
+      overflow: hidden; /* 让圆角对边框生效 */
+    }
+    thead {
+      background-color: #f0f0f0;
+    }
+    th {
+      white-space: nowrap; /* 禁止表头换行 */
+      text-align: left;
+      padding: 12px 8px;
+      border-bottom: 2px solid #ddd;
+      font-weight: 600;
+      color: #555;
+    }
+    tbody tr {
+      transition: background-color 0.2s ease;
+    }
+    /* 斑马纹效果：偶数行使用浅色背景 */
+    tbody tr:nth-child(even) {
+      background-color: #fafafa;
+    }
+    tbody tr:hover {
+      background-color: #e8f4fa;  /* 悬停高亮 */
+    }
+    td {
+      padding: 12px 8px;
+      border-bottom: 1px solid #eee;
+      vertical-align: middle; /* 垂直居中 */
+    }
+    td img {
+      max-height: 100px;
+      border-radius: 4px;
+      transition: transform 0.3s ease;
+    }
+    td img:hover {
+      transform: scale(1.05);
+    }
+  </style>
+</head>
+
+<body>
+  <h1>Top 5 Popularity Movies by Region</h1>
+  
+  <!-- Keep this line in a single row -->
+  <p id="datasetInfo">
+    We only select the movies which have reviews and subtitle scripts in TMDB and Open-Subtitle dataset
+  </p>
+
+  <svg id="choropleth" width="1200" height="600"></svg>
+
+  <div id="regionMoviesSection">
+    <h2 id="regionTitle">Movies from ???</h2>
+    <table id="movieTable">
+      <thead>
+        <tr>
+          <th>Poster</th>
+          <th>Movie Title</th>
+          <th>Popularity</th>
+          <th>Release Date</th>
+          <th>Rating</th>
+          <th>Vote Count</th>
+        </tr>
+      </thead>
+      <tbody id="movieTableBody"></tbody>
+    </table>
+  </div>
+
+  <script>
+    // Basic map configuration
+    const margin = {top: 50, right: 50, bottom: 50, left: 50};
+    const height = 600, width = 1200;
+    const svg = d3.select("svg#choropleth");
+    const ratingColors = ["#c7e9c0", "#a1d99b", "#41ab5d", "#005a32"];
+
+    // Tooltip
+    const tip = d3.tip()
+      .attr("id", "tooltip")
+      .attr("class", "tip_class")
+      .offset([-5, -5])
+      .html((cur_country_data, map_event) => {
+        if (cur_country_data) {
+          return `Region: ${cur_country_data.region}<br>
+                  Number of Movies: ${cur_country_data.num_movie}<br>
+                  Average Rating: ${Number(cur_country_data.average_rate).toFixed(2)}`;
+        } else {
+          return `Region: ${map_event.properties.name}<br>
+                  No Data Available`;
+        }
+      });
+    svg.call(tip);
+
+    const projection = d3.geoNaturalEarth()
+      .translate([width/2, height/2])
+      .scale(200);
+    const path = d3.geoPath().projection(projection);
+
+    // Load data
+    Promise.all([
+      d3.csv("/CSE6242/map_data/movie_map_data_top5.csv"),
+      d3.json("/CSE6242/map_data/world_countries.json")
+    ]).then(([movieData, world]) => {
+      createMapAndLegend(world, movieData);
+    });
+
+    function createMapAndLegend(world, movieData) {
+      const ratingValues = movieData.map(d => +d.average_rate);
+      const colorScale = d3.scaleQuantile()
+        .domain(ratingValues)
+        .range(ratingColors);
+
+      // Draw countries
+      svg.append("g")
+        .attr("id", "countries")
+        .selectAll("path")
+        .data(world.features)
+        .enter()
+        .append("path")
+        .attr("d", path)
+        .attr("fill", map => {
+          const curData = movieData.find(movie => movie.region === map.properties.name);
+          return curData ? colorScale(+curData.average_rate) : "grey";
+        })
+        .attr("stroke", "white")
+        .attr("stroke-width", 0.5)
+        .on("mouseover", function(map_event) {
+          const curData = movieData.find(movie => movie.region === map_event.properties.name);
+          tip.show(curData, map_event);
+          d3.select(this).attr("stroke", "black").attr("stroke-width", 1);
+        })
+        .on("mouseout", function() {
+          d3.select(this).attr("stroke", "white").attr("stroke-width", 0.5);
+          tip.hide();
+        })
+        .on("click", function(map_event) {
+          const curData = movieData.find(movie => movie.region === map_event.properties.name);
+          if (curData && curData.num_movie > 0) {
+            loadRegionMovies(map_event.properties.name);
+          }
+        });
+
+      // Create legend
+      let quantiles = colorScale.quantiles().map(d => d.toFixed(2));
+      let min_rating = d3.min(ratingValues).toFixed(2);
+      let max_rating = d3.max(ratingValues).toFixed(2);
+      let legend_text = quantiles.length > 0
+        ? [
+            `${min_rating} to ${quantiles[0]}`,
+            `${quantiles[0]} to ${quantiles[1]}`,
+            `${quantiles[1]} to ${quantiles[2]}`,
+            `${quantiles[2]} to ${max_rating}`
+          ]
+        : [`${min_rating} to ${max_rating}`];
+
+      let legend = svg.append("g")
+        .attr("id", "legend")
+        .attr("transform", `translate(${width - 2 * margin.right - 20}, 20)`);
+
+      let legendScale = d3.scaleOrdinal()
+        .domain(legend_text)
+        .range(ratingColors);
+
+      let legend_shape = d3.legendColor()
+        .scale(legendScale)
+        .shape("rect")
+        .shapeWidth(15)
+        .shapeHeight(15)
+        .shapePadding(5)
+        .labelOffset(5)
+        .title("Movie Ratings");
+      legend.call(legend_shape);
+    }
+
+    // Load region movies
+    function loadRegionMovies(region) {
+      const regionMoviesSection = document.getElementById("regionMoviesSection");
+      regionMoviesSection.style.display = "block";
+      const tableBody = document.getElementById("movieTableBody");
+      tableBody.innerHTML = "";
+
+      // Region mapping if needed
+      const regionMapping = {
+        "United Arab Emirates": "United Arab Emirates",
+        "Afghanistan": "Afghanistan"
+      };
+      const normalizedRegion = regionMapping[region] || region;
+      document.getElementById("regionTitle").textContent = `Movies from ${normalizedRegion}`;
+      regionMoviesSection.scrollIntoView({ behavior: "smooth" });
+
+      d3.json("/CSE6242/movie_data/clean_top5_movie_data_with_subtitle.json")
+        .then(data => {
+          let regionMovies = data.filter(movie => movie.region === normalizedRegion);
+          regionMovies = regionMovies.sort((a, b) => b.popularity - a.popularity);
+          const tableBodySel = d3.select("#movieTableBody");
+          regionMovies.forEach(movie => {
+            const row = tableBodySel.append("tr")
+              .style("cursor", "pointer")
+              .on("click", () => {
+                window.location.href = `/CSE6242/movie_detail.html?id=${movie.movie_id}`;
+              });
+            row.html(`
+              <td><img src="https://image.tmdb.org/t/p/w500${movie.poster_path}" alt="${movie.movie_title} poster" /></td>
+              <td>${movie.movie_title}</td>
+              <td>${movie.popularity}</td>
+              <td>${movie.release_date}</td>
+              <td>${movie.movie_rate.toFixed(2)}</td>
+              <td>${movie.vote_count}</td>
+            `);
+          });
+        })
+        .catch(error => {
+          console.error("Error loading movie data:", error);
+          document.getElementById("movieTableBody").innerHTML =
+            `<tr><td colspan="6">Error loading movie data: ${error.message}</td></tr>`;
+        });
+    }
+  </script>
+</body>
+</html>
+
