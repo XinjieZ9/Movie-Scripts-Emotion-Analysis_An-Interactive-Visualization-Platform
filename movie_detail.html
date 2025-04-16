@@ -72,11 +72,15 @@
       border-radius: 8px;
       box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
-    .chart-container {
+    .chart-row {
       display: flex;
       justify-content: space-around;
       margin-top: 20px;
-      flex-wrap: wrap;
+    }
+    .chart-column {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
     .chart {
       width: 300px;
@@ -149,16 +153,18 @@
     </div>
 
     <div id="chartsSection">
-      <div class="chart-container">
-        <div>
+      <div class="chart-row">
+        <div class="chart-column">
           <h2>Subtitle Emotion Analysis</h2>
           <div id="scriptEmotionChart" class="chart"></div>
         </div>
-        <div>
+        <div class="chart-column">
           <h2>Review Emotion Analysis</h2>
           <div id="reviewEmotionChart" class="chart"></div>
         </div>
-        <div>
+      </div>
+      <div class="chart-row">
+        <div class="chart-column">
           <h2>Video Emotion Analysis</h2>
           <div id="videoEmotionChart" class="chart"></div>
         </div>
@@ -430,7 +436,6 @@
   </script>
 </body>
 </html>
-
 
 
 
