@@ -65,7 +65,6 @@
     #emotionSelection button:hover {
       background-color: #3b5f85;
     }
-    /* 图表区域 */
     #chartsSection {
       display: none;
       background-color: #fff;
@@ -77,10 +76,12 @@
       display: flex;
       justify-content: space-around;
       margin-top: 20px;
+      flex-wrap: wrap;
     }
     .chart {
       width: 300px;
       height: 300px;
+      margin: 10px;
     }
     .reviews-section {
       margin-top: 20px;
@@ -134,9 +135,9 @@
       </div>
     </div>
 
-    <!-- Emotion selection area (English & fancy style) -->
+    <!-- Emotion selection area-->
     <div id="emotionSelection">
-      <h2>What type of movie do you think this is? (Select all that apply)</h2>
+      <h2>Which emotions did this movie evoke in you? (Select all that apply)</h2>
       <label><input type="checkbox" name="emotion" value="Fear"> Fear</label>
       <label><input type="checkbox" name="emotion" value="Sad"> Sad</label>
       <label><input type="checkbox" name="emotion" value="Surprise"> Surprise</label>
@@ -147,7 +148,6 @@
       <button id="emotionSubmit">Submit</button>
     </div>
 
-    <!-- Charts section: initially hidden -->
     <div id="chartsSection">
       <div class="chart-container">
         <div>
@@ -157,6 +157,10 @@
         <div>
           <h2>Review Emotion Analysis</h2>
           <div id="reviewEmotionChart" class="chart"></div>
+        </div>
+        <div>
+          <h2>Video Emotion Analysis</h2>
+          <div id="videoEmotionChart" class="chart"></div>
         </div>
       </div>
     </div>
@@ -212,7 +216,6 @@
         .innerRadius(0)
         .outerRadius(radius);
 
-      // Label arc: labels are placed on a circle at 75% of the radius
       const labelArc = d3.arc()
         .innerRadius(radius * 0.75)
         .outerRadius(radius * 0.75);
@@ -261,13 +264,13 @@
         .text(d => d.data.emotion);
     }
 
-    // CSV title formatting function
     function formatTitleForCSV(title, suffix) {
       return title
         .trim()
         .replace(/:\s*/g, "__")
         .replace(/&\s*/g, "__")
         .replace(/'\s*/g, "_")
+        .replace(/,\s*/g, "_")
         .replace(/\s+/g, "_")
         + suffix;
     }
@@ -278,9 +281,10 @@
     Promise.all([
       d3.json("./movie_data/clean_top5_movie_data_with_subtitle.json"),
       d3.csv("./movie_data/all_movies_subtitle_emotion_scores.csv"),
-      d3.csv("./movie_data/all_movies_reviews_emotion_scores.csv")
+      d3.csv("./movie_data/all_movies_reviews_emotion_scores.csv"),
+      d3.json("./movie_data/top5scores_by_nvila.json")
     ])
-    .then(([movieData, subtitleData, reviewsData]) => {
+    .then(([movieData, subtitleData, reviewsData, videoData]) => {
       const movie = movieData.find(m => m.movie_id === parseInt(movieId));
       if (!movie) return;
 
@@ -303,11 +307,9 @@
           : 'Show more';
       });
 
-      // Generate CSV matching keys
       const key1 = formatTitleForCSV(movie.movie_title, "_subtitle");
       const key2 = formatTitleForCSV(movie.movie_title, "_reviews");
 
-      // Construct emotion data arrays (complete 6 dimensions)
       let scriptEmotions = null;
       const subtitleRow = subtitleData.find(d => d.movie_title === key1);
       if (subtitleRow) {
@@ -334,26 +336,36 @@
         ];
       }
 
-      // Initially hide charts section; wait for user selection
+      let videoEmotions = null;
+      const videoRow = videoData.find(d => d.movie_id === parseInt(movieId));
+      if (videoRow) {
+        videoEmotions = [
+          { emotion: "Fear",      value: +videoRow.fear      * 100 },
+          { emotion: "Sad",       value: +videoRow.sadness   * 100 },
+          { emotion: "Surprise",  value: +videoRow.surprise  * 100 },
+          { emotion: "Angry",     value: +videoRow.anger     * 100 },
+          { emotion: "Happy",     value: +videoRow.joy       * 100 },
+          { emotion: "Love",      value: +videoRow.love      * 100 }
+        ];
+      }
+
       document.getElementById('chartsSection').style.display = 'none';
 
-      // Emotion selection interaction: regardless of checkboxes, display full 6-dimension charts on submit
       const emotionSubmitBtn = document.getElementById('emotionSubmit');
       emotionSubmitBtn.addEventListener('click', () => {
-        // Show charts section
         document.getElementById('chartsSection').style.display = 'block';
-        // Draw pie charts
         if (scriptEmotions) {
           createPieChart('scriptEmotionChart', scriptEmotions);
         }
         if (reviewEmotions) {
           createPieChart('reviewEmotionChart', reviewEmotions);
         }
-        // Hide emotion selection area
+        if (videoEmotions) {
+          createPieChart('videoEmotionChart', videoEmotions);
+        }
         document.getElementById('emotionSelection').style.display = 'none';
       });
 
-      // Process reviews section
       const movieReviews = movie.review_list;
       if (movieReviews && movieReviews.length > 0) {
         const reviewsContainer = document.getElementById('reviewsContainer');
