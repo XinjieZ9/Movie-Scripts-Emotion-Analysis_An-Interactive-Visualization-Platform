@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>Movie Details</title>
-  <script type="text/javascript" src="/CSE6242/lib/d3.v5.min.js"></script>
+  <script type="text/javascript" src="./lib/d3.v5.min.js"></script>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -276,9 +276,9 @@
     const movieId = urlParams.get('id');
 
     Promise.all([
-      d3.json("/CSE6242/movie_data/clean_top5_movie_data_with_subtitle.json"),
-      d3.csv("/CSE6242/movie_data/All_Movies_Subtitle_Emotion_Scores.csv"),
-      d3.csv("/CSE6242/movie_data/all_movies_reviews_emotion_scores.csv")
+      d3.json("./movie_data/clean_top5_movie_data_with_subtitle.json"),
+      d3.csv("./movie_data/All_Movies_Subtitle_Emotion_Scores.csv"),
+      d3.csv("./movie_data/all_movies_reviews_emotion_scores.csv")
     ])
     .then(([movieData, subtitleData, reviewsData]) => {
       const movie = movieData.find(m => m.movie_id === parseInt(movieId));
