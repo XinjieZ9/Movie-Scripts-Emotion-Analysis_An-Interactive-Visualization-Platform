@@ -5,7 +5,6 @@
   <title>Movie Details</title>
   <script type="text/javascript" src="./lib/d3.v5.min.js"></script>
   <style>
-    /* 保持之前的样式不变 */
     body {
       font-family: Arial, sans-serif;
       max-width: 1000px;
@@ -184,7 +183,6 @@
   </div>
 
   <script>
-    // 保持之前的饼图绘制函数不变
     function createPieChart(containerId, data) {
       const width = 450;
       const height = 300;
@@ -285,9 +283,7 @@
         + suffix;
     }
 
-    // 修改视频情感映射函数，将5分制转换为百分比
     function mapVideoEmotions(videoData) {
-      // 计算总分
       const totalScore = 
         videoData["Fearful / Scared / Afraid"] +
         videoData["Sad / Downhearted / Blue"] +
@@ -296,7 +292,6 @@
         videoData["Joyful / Amused / Happy"] +
         videoData["Loving / Affectionate / Friendly"];
       
-      // 计算每个情感的百分比
       return [
         { 
           emotion: "Fear", 
@@ -338,7 +333,6 @@
       const movie = movieData.find(m => m.movie_id === parseInt(movieId));
       if (!movie) return;
 
-      // 填充电影基本信息
       document.getElementById('moviePoster').src = `https://image.tmdb.org/t/p/w500${movie.poster_path}`;
       document.getElementById('movieTitle').textContent = movie.movie_title;
       document.getElementById('movieOverview').textContent = movie.overview;
@@ -389,7 +383,6 @@
       let videoEmotions = null;
       const videoRow = videoData[movieId];
       if (videoRow) {
-        // 映射视频情感数据并转换为百分比
         videoEmotions = mapVideoEmotions(videoRow);
       }
 
@@ -441,8 +434,3 @@
   </script>
 </body>
 </html>
-
-
-
-
-
