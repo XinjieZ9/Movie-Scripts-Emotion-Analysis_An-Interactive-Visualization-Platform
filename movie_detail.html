@@ -289,12 +289,12 @@
     function mapVideoEmotions(videoData) {
       // 计算总分
       const totalScore = 
-        (videoData["Fearful / Scared / Afraid"] +
+        videoData["Fearful / Scared / Afraid"] +
         videoData["Sad / Downhearted / Blue"] +
         videoData["Surprised / Amazed / Astonished"] +
         videoData["Angry / Irritated / Mad"] +
         videoData["Joyful / Amused / Happy"] +
-        videoData["Loving / Affectionate / Friendly"]);
+        videoData["Loving / Affectionate / Friendly"];
       
       // 计算每个情感的百分比
       return [
