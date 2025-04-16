@@ -204,7 +204,11 @@
         "#e45756",
         "#72b7b2",
         "#54a24b",
-        "#eeca3b"
+        "#eeca3b",
+        "#b279a2",
+        "#ff9da6",
+        "#9d755d",
+        "#bab0ac"
       ];
       const color = d3.scaleOrdinal(colorPalette);
 
@@ -275,6 +279,36 @@
         + suffix;
     }
 
+    // Function to map detailed video emotions to our standard categories
+    function mapVideoEmotions(videoData) {
+      return [
+        { 
+          emotion: "Fear", 
+          value: (videoData["Fearful / Scared / Afraid"] + videoData["Anxious / Tense / Nervous"]) / 2 
+        },
+        { 
+          emotion: "Sad", 
+          value: videoData["Sad / Downhearted / Blue"] 
+        },
+        { 
+          emotion: "Surprise", 
+          value: videoData["Surprised / Amazed / Astonished"] 
+        },
+        { 
+          emotion: "Angry", 
+          value: (videoData["Angry / Irritated / Mad"] + videoData["Disdainful / Scornful / Contemptuous"]) / 2 
+        },
+        { 
+          emotion: "Happy", 
+          value: (videoData["Joyful / Amused / Happy"] + videoData["Warm-hearted / Gleeful / Elated"]) / 2 
+        },
+        { 
+          emotion: "Love", 
+          value: videoData["Loving / Affectionate / Friendly"] 
+        }
+      ];
+    }
+
     const urlParams = new URLSearchParams(window.location.search);
     const movieId = urlParams.get('id');
 
@@ -337,16 +371,15 @@
       }
 
       let videoEmotions = null;
-      const videoRow = videoData.find(d => d.movie_id === parseInt(movieId));
+      const videoRow = videoData[movieId];
       if (videoRow) {
-        videoEmotions = [
-          { emotion: "Fear",      value: +videoRow.fear      * 100 },
-          { emotion: "Sad",       value: +videoRow.sadness   * 100 },
-          { emotion: "Surprise",  value: +videoRow.surprise  * 100 },
-          { emotion: "Angry",     value: +videoRow.anger     * 100 },
-          { emotion: "Happy",     value: +videoRow.joy       * 100 },
-          { emotion: "Love",      value: +videoRow.love      * 100 }
-        ];
+        // Map the detailed video emotions to our standard categories
+        videoEmotions = mapVideoEmotions(videoRow);
+        
+        // Convert to percentages (assuming values are already in 0-100 scale)
+        videoEmotions.forEach(e => {
+          e.value = e.value;
+        });
       }
 
       document.getElementById('chartsSection').style.display = 'none';
