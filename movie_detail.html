@@ -277,7 +277,7 @@
 
     Promise.all([
       d3.json("./movie_data/clean_top5_movie_data_with_subtitle.json"),
-      d3.csv("./movie_data/All_Movies_Subtitle_Emotion_Scores.csv"),
+      d3.csv("./movie_data/all_movies_subtitle_emotion_scores.csv"),
       d3.csv("./movie_data/all_movies_reviews_emotion_scores.csv")
     ])
     .then(([movieData, subtitleData, reviewsData]) => {
