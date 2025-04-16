@@ -123,6 +123,29 @@
     .expand-btn.expanded::before {
       content: '▲ ';
     }
+    /* 新增的用户选择情绪显示样式 */
+    #userSelectedEmotions {
+      background-color: #f8f9fa;
+      border: 1px solid #dee2e6;
+      border-radius: 5px;
+      padding: 15px;
+      margin-bottom: 20px;
+      text-align: center;
+      display: none;
+    }
+    #userSelectedEmotions h3 {
+      margin-top: 0;
+      color: #495057;
+    }
+    .selected-emotion-tag {
+      display: inline-block;
+      background-color: #4c78a8;
+      color: white;
+      padding: 5px 10px;
+      border-radius: 15px;
+      margin: 5px;
+      font-size: 14px;
+    }
   </style>
 </head>
 <body>
@@ -149,6 +172,12 @@
       <label><input type="checkbox" name="emotion" value="Love"> Love</label>
       <br>
       <button id="emotionSubmit">Submit</button>
+    </div>
+
+    <!-- 新增的用户选择情绪显示区域 -->
+    <div id="userSelectedEmotions">
+      <h3>Your Selected Emotions</h3>
+      <div id="selectedEmotionsList"></div>
     </div>
 
     <div id="chartsSection">
@@ -387,9 +416,30 @@
       }
 
       document.getElementById('chartsSection').style.display = 'none';
+      document.getElementById('userSelectedEmotions').style.display = 'none';
 
       const emotionSubmitBtn = document.getElementById('emotionSubmit');
       emotionSubmitBtn.addEventListener('click', () => {
+        // 获取用户选择的情绪
+        const selectedEmotions = [];
+        document.querySelectorAll('input[name="emotion"]:checked').forEach(checkbox => {
+          selectedEmotions.push(checkbox.value);
+        });
+        
+        // 显示用户选择的情绪
+        if (selectedEmotions.length > 0) {
+          const selectedEmotionsList = document.getElementById('selectedEmotionsList');
+          selectedEmotionsList.innerHTML = '';
+          selectedEmotions.forEach(emotion => {
+            const tag = document.createElement('span');
+            tag.className = 'selected-emotion-tag';
+            tag.textContent = emotion;
+            selectedEmotionsList.appendChild(tag);
+          });
+          document.getElementById('userSelectedEmotions').style.display = 'block';
+        }
+        
+        // 显示图表区域
         document.getElementById('chartsSection').style.display = 'block';
         if (scriptEmotions) {
           createPieChart('scriptEmotionChart', scriptEmotions);
