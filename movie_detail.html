@@ -123,7 +123,7 @@
     .expand-btn.expanded::before {
       content: '▲ ';
     }
-    /* 新增的用户选择情绪显示样式 */
+
     #userSelectedEmotions {
       background-color: #f8f9fa;
       border: 1px solid #dee2e6;
@@ -149,7 +149,7 @@
   </style>
 </head>
 <body>
-  <!-- 保持之前的HTML结构不变 -->
+
   <div id="movieDetailContainer">
     <div class="movie-header">
       <img id="moviePoster" class="movie-poster" src="" alt="Movie Poster">
@@ -174,7 +174,7 @@
       <button id="emotionSubmit">Submit</button>
     </div>
 
-    <!-- 新增的用户选择情绪显示区域 -->
+ 
     <div id="userSelectedEmotions">
       <h3>Your Selected Emotions</h3>
       <div id="selectedEmotionsList"></div>
@@ -420,13 +420,13 @@
 
       const emotionSubmitBtn = document.getElementById('emotionSubmit');
       emotionSubmitBtn.addEventListener('click', () => {
-        // 获取用户选择的情绪
+       
         const selectedEmotions = [];
         document.querySelectorAll('input[name="emotion"]:checked').forEach(checkbox => {
           selectedEmotions.push(checkbox.value);
         });
         
-        // 显示用户选择的情绪
+        
         if (selectedEmotions.length > 0) {
           const selectedEmotionsList = document.getElementById('selectedEmotionsList');
           selectedEmotionsList.innerHTML = '';
@@ -439,7 +439,7 @@
           document.getElementById('userSelectedEmotions').style.display = 'block';
         }
         
-        // 显示图表区域
+      
         document.getElementById('chartsSection').style.display = 'block';
         if (scriptEmotions) {
           createPieChart('scriptEmotionChart', scriptEmotions);
