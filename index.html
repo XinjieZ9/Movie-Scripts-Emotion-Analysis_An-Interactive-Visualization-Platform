@@ -4,11 +4,11 @@
   <meta charset="utf-8">
   <title>Movie Emotion Analysis</title>
   <link href="https://fonts.googleapis.com/css?family=Poppins:300,400,600&display=swap" rel="stylesheet">
-  <script type="text/javascript" src="/CSE6242/lib/d3.v5.min.js"></script>
-  <script type="text/javascript" src="/CSE6242/lib/d3-geo-projection.v2.min.js"></script>
-  <script type="text/javascript" src="/CSE6242/lib/d3-tip.min.js"></script>
-  <script type="text/javascript" src="/CSE6242/lib/topojson.v2.min.js"></script>
-  <script type="text/javascript" src="/CSE6242/lib/d3-legend.min.js"></script>
+  <script type="text/javascript" src="/Movie-Scripts-Emotion-Analysis_An-Interactive-Visualization-Platform/lib/d3.v5.min.js"></script>
+  <script type="text/javascript" src="/Movie-Scripts-Emotion-Analysis_An-Interactive-Visualization-Platform/lib/d3-geo-projection.v2.min.js"></script>
+  <script type="text/javascript" src="/Movie-Scripts-Emotion-Analysis_An-Interactive-Visualization-Platform/lib/d3-tip.min.js"></script>
+  <script type="text/javascript" src="/Movie-Scripts-Emotion-Analysis_An-Interactive-Visualization-Platform/lib/topojson.v2.min.js"></script>
+  <script type="text/javascript" src="/Movie-Scripts-Emotion-Analysis_An-Interactive-Visualization-Platform/lib/d3-legend.min.js"></script>
 
   <style>
     body {
@@ -173,8 +173,8 @@
 
 
     Promise.all([
-      d3.csv("/CSE6242/map_data/movie_map_data_top5.csv"),
-      d3.json("/CSE6242/map_data/world_countries.json")
+      d3.csv("/Movie-Scripts-Emotion-Analysis_An-Interactive-Visualization-Platform/map_data/movie_map_data_top5.csv"),
+      d3.json("/Movie-Scripts-Emotion-Analysis_An-Interactive-Visualization-Platform/map_data/world_countries.json")
     ]).then(([movieData, world]) => {
       createMapAndLegend(world, movieData);
     });
@@ -432,7 +432,7 @@
       document.getElementById("regionTitle").textContent = `Movies from ${normalizedRegion}`;
       regionMoviesSection.scrollIntoView({ behavior: "smooth" });
 
-      d3.json("/CSE6242/movie_data/clean_top5_movie_data_with_subtitle.json")
+      d3.json("/Movie-Scripts-Emotion-Analysis_An-Interactive-Visualization-Platform/movie_data/clean_top5_movie_data_with_subtitle.json")
         .then(data => {
           let regionMovies = data.filter(movie => movie.region === normalizedRegion);
           regionMovies = regionMovies.sort((a, b) => b.popularity - a.popularity);
@@ -441,7 +441,7 @@
             const row = tableBodySel.append("tr")
               .style("cursor", "pointer")
               .on("click", () => {
-                window.location.href = `/CSE6242/movie_detail.html?id=${movie.movie_id}`;
+                window.location.href = `/Movie-Scripts-Emotion-Analysis_An-Interactive-Visualization-Platform/movie_detail.html?id=${movie.movie_id}`;
               });
             row.html(`
               <td><img src="https://image.tmdb.org/t/p/w500${movie.poster_path}" alt="${movie.movie_title} poster" /></td>
